@@ -5,6 +5,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "forktest"
+rootProject.name = "papermachine"
 
-include("forktest-api", "forktest-server")
+include("papermachine-api", "papermachine-server")
