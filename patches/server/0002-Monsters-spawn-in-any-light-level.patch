@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: whimsicalities <whimsicalities.code@gmail.com>
+Date: Fri, 2 Jun 2023 20:35:56 +0100
+Subject: [PATCH] Monsters spawn in any light level
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Monster.java b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+index 55c245d0dfa369dc6de2197ae37335fba4fae4ae..44ba27728bbbe83958bfdafea163b33ea69fc4e1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Monster.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+@@ -89,18 +89,7 @@ public abstract class Monster extends PathfinderMob implements Enemy {
+     }
+ 
+     public static boolean isDarkEnoughToSpawn(ServerLevelAccessor world, BlockPos pos, RandomSource random) {
+-        if (world.getBrightness(LightLayer.SKY, pos) > random.nextInt(32)) {
+-            return false;
+-        } else {
+-            DimensionType dimensionType = world.dimensionType();
+-            int i = world.getLevel().paperConfig().entities.spawning.monsterSpawnMaxLightLevel >= 0 ? world.getLevel().paperConfig().entities.spawning.monsterSpawnMaxLightLevel : dimensionType.monsterSpawnBlockLightLimit(); // Paper
+-            if (i < 15 && world.getBrightness(LightLayer.BLOCK, pos) > i) {
+-                return false;
+-            } else {
+-                int j = world.getLevel().isThundering() ? world.getMaxLocalRawBrightness(pos, 10) : world.getMaxLocalRawBrightness(pos);
+-                return j <= dimensionType.monsterSpawnLightTest().sample(random);
+-            }
+-        }
++        return true;
+     }
+ 
+     public static boolean checkMonsterSpawnRules(EntityType<? extends Monster> type, ServerLevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index af799b61cec48ca290ed66cb47cfc0b244ac41a7..633aeae60b06631ee79c502e4c500af5aeba41fc 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -116,17 +116,7 @@ public abstract class BaseSpawner {
+                     if (world.noCollision(((EntityType) optional.get()).getAABB(d0, d1, d2))) {
+                         BlockPos blockposition1 = new BlockPos(d0, d1, d2);
+ 
+-                        if (mobspawnerdata.getCustomSpawnRules().isPresent()) {
+-                            if (!((EntityType) optional.get()).getCategory().isFriendly() && world.getDifficulty() == Difficulty.PEACEFUL) {
+-                                continue;
+-                            }
+-
+-                            SpawnData.CustomSpawnRules mobspawnerdata_a = (SpawnData.CustomSpawnRules) mobspawnerdata.getCustomSpawnRules().get();
+-
+-                            if (!mobspawnerdata_a.blockLightLimit().isValueInRange(world.getBrightness(LightLayer.BLOCK, blockposition1)) || !mobspawnerdata_a.skyLightLimit().isValueInRange(world.getBrightness(LightLayer.SKY, blockposition1))) {
+-                                continue;
+-                            }
+-                        } else if (!SpawnPlacements.checkSpawnRules((EntityType) optional.get(), world, MobSpawnType.SPAWNER, blockposition1, world.getRandom())) {
++                        if (!SpawnPlacements.checkSpawnRules((EntityType) optional.get(), world, MobSpawnType.SPAWNER, blockposition1, world.getRandom())) {
+                             continue;
+                         }
+                         // Paper start
+@@ -173,7 +163,7 @@ public abstract class BaseSpawner {
+                         if (entity instanceof Mob) {
+                             Mob entityinsentient = (Mob) entity;
+ 
+-                            if (mobspawnerdata.getCustomSpawnRules().isEmpty() && !entityinsentient.checkSpawnRules(world, MobSpawnType.SPAWNER) || !entityinsentient.checkSpawnObstruction(world)) {
++                            if (!entityinsentient.checkSpawnObstruction(world)) {
+                                 continue;
+                             }
+ 
